@@ -83,7 +83,7 @@ func apiPut(db *bolt.DB) func(w http.ResponseWriter, r *http.Request) {
 		}
 		if twitter != "" {
 			if !isValidTwitterHandle(twitter) {
-				sendError(w, "Invalid Instagram Handle. Only letters, numbers, and underscore allowed.")
+				sendError(w, "Invalid Twitter Handle. Only letters, numbers, and underscore allowed.")
 				return
 			}
 		}
@@ -201,7 +201,7 @@ func apiPost(db *bolt.DB) func(w http.ResponseWriter, r *http.Request) {
 		}
 		if twitter != "" {
 			if !isValidTwitterHandle(twitter) {
-				sendError(w, "Invalid Instagram Handle. Only letters, numbers, and underscore allowed.")
+				sendError(w, "Invalid Twitter Handle. Only letters, numbers, and underscore allowed.")
 				return
 			}
 		}
