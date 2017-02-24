@@ -20,7 +20,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"html"
 	"html/template"
@@ -56,31 +55,65 @@ func render(w http.ResponseWriter, templateName string, data interface{}) {
 
 func apiPut(db *bolt.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		page := Page{}
+		title := r.FormValue("title")
+		content := r.FormValue("content")
+		author := r.FormValue("author")
+		website := r.FormValue("website")
+		twitter := r.FormValue("twitter")
+		github := r.FormValue("github")
+		facebook := r.FormValue("facebook")
+		instagram := r.FormValue("instagram")
 
-		// parse the incoming JSON request
-		decoder := json.NewDecoder(r.Body)
-		errDecode := decoder.Decode(&page)
-		if errDecode != nil {
-			log.Printf("Error: %v\n", errDecode)
-			sendError(w, "Invalid JSON")
-			return
-		}
-		defer r.Body.Close()
+		// validation
 
 		// check that the title has something in it (other than whitespace)
-		slug := slugify.Slugify(page.Title)
+		slug := slugify.Slugify(title)
 		if slug == "" {
 			sendError(w, "Provide a title")
 			return
 		}
 
+		if twitter != "" {
+			if !isValidTwitterHandle(twitter) {
+				sendError(w, "Invalid Instagram Handle. Only letters, numbers, and underscore allowed.")
+				return
+			}
+		}
+		if github != "" {
+			if !isValidGitHubHandle(github) {
+				sendError(w, "Invalid GitHub Handle. Only letters, numbers, and dash allowed.")
+				return
+			}
+		}
+		if facebook != "" {
+			if !isValidFacebookHandle(facebook) {
+				sendError(w, "Invalid Facebook Handle. Only letters, numbers, and dot allowed.")
+				return
+			}
+		}
+		if instagram != "" {
+			if !isValidInstagramHandle(instagram) {
+				sendError(w, "Invalid Instagram Handle. Only letters and numbers allowed.")
+				return
+			}
+		}
+
 		// fill in the other fields to save this page
 		now := time.Now()
-		page.Id = randStr(16)
-		page.Name = slug + "-" + randStr(8)
-		page.Inserted = now
-		page.Updated = now
+		page := Page{
+			Id:        randStr(16),
+			Name:      slug + "-" + randStr(8),
+			Title:     title,
+			Author:    author,
+			Website:   website,
+			Content:   content,
+			Twitter:   twitter,
+			Facebook:  facebook,
+			GitHub:    github,
+			Instagram: instagram,
+			Inserted:  now,
+			Updated:   now,
+		}
 
 		// and finally, create the HTML
 		html := blackfriday.MarkdownCommon([]byte(page.Content))
@@ -112,20 +145,19 @@ func apiPut(db *bolt.DB) func(w http.ResponseWriter, r *http.Request) {
 
 func apiPost(db *bolt.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		page := Page{}
-
-		// parse the incoming JSON request
-		decoder := json.NewDecoder(r.Body)
-		errDecode := decoder.Decode(&page)
-		if errDecode != nil {
-			log.Printf("Error: %v\n", errDecode)
-			sendError(w, "Invalid JSON")
-			return
-		}
-		defer r.Body.Close()
+		id := r.FormValue("id")
+		name := r.FormValue("name")
+		title := r.FormValue("title")
+		content := r.FormValue("content")
+		author := r.FormValue("author")
+		website := r.FormValue("website")
+		twitter := r.FormValue("twitter")
+		github := r.FormValue("github")
+		facebook := r.FormValue("facebook")
+		instagram := r.FormValue("instagram")
 
 		// using the page.Name, retrieve this page then check it's Id is correct
-		existPage, errGet := storeGetPage(db, page.Name)
+		existPage, errGet := storeGetPage(db, name)
 		if errGet != nil {
 			log.Printf("Error: %v\n", errGet)
 			sendError(w, "Internal Error. Please try again later.")
@@ -138,33 +170,59 @@ func apiPost(db *bolt.DB) func(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// check that this page has this Id
-		if existPage.Id != page.Id {
+		if existPage.Id != id {
 			sendError(w, "Permission denied.")
 			return
 		}
 
+		// validation
+
 		// check that the title has something in it (other than whitespace)
-		slug := slugify.Slugify(page.Title)
+		slug := slugify.Slugify(title)
 		if slug == "" {
 			sendError(w, "Provide a title")
 			return
 		}
+		if twitter != "" {
+			if !isValidTwitterHandle(twitter) {
+				sendError(w, "Invalid Instagram Handle. Only letters, numbers, and underscore allowed.")
+				return
+			}
+		}
+		if github != "" {
+			if !isValidGitHubHandle(github) {
+				sendError(w, "Invalid GitHub Handle. Only letters, numbers, and dash allowed.")
+				return
+			}
+		}
+		if facebook != "" {
+			if !isValidFacebookHandle(facebook) {
+				sendError(w, "Invalid Facebook Handle. Only letters, numbers, and dot allowed.")
+				return
+			}
+		}
+		if instagram != "" {
+			if !isValidInstagramHandle(instagram) {
+				sendError(w, "Invalid Instagram Handle. Only letters and numbers allowed.")
+				return
+			}
+		}
 
-		// We don't trust what is in `page`, but we know `existPage` is fine, so we'll just update a couple of fields
-		// there, then re-save.
+		// We don't trust what is in the incoming params, but we know `existPage` is fine, so we'll just update a
+		// the fields there to then re-save.
 		now := time.Now()
-		existPage.Title = page.Title
-		existPage.Author = page.Author
-		existPage.Website = page.Website
-		existPage.Twitter = page.Twitter
-		existPage.Facebook = page.Facebook
-		existPage.GitHub = page.GitHub
-		existPage.Instagram = page.Instagram
-		existPage.Content = page.Content
+		existPage.Title = title
+		existPage.Content = content
+		existPage.Author = author
+		existPage.Website = website
+		existPage.Twitter = twitter
+		existPage.Facebook = facebook
+		existPage.GitHub = github
+		existPage.Instagram = instagram
 		existPage.Updated = now
 
 		// and finally, create the HTML
-		html := blackfriday.MarkdownCommon([]byte(page.Content))
+		html := blackfriday.MarkdownCommon([]byte(content))
 		existPage.Html = template.HTML(html)
 
 		errIns := storePutPage(db, *existPage)
@@ -182,8 +240,8 @@ func apiPost(db *bolt.DB) func(w http.ResponseWriter, r *http.Request) {
 			Msg:     "Saved",
 			Payload: make(map[string]string),
 		}
-		data.Payload["id"] = page.Id
-		data.Payload["name"] = page.Name
+		data.Payload["id"] = existPage.Id
+		data.Payload["name"] = existPage.Name
 
 		fmt.Printf("data=%#v\n", data)
 

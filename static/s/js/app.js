@@ -7,39 +7,57 @@ function ajax(method, url, data, callback) {
     }, 0)
   }
 
-  var request = {
-    method : method,
-    url : url,
-  }
-
   if ( method === 'get' ) {
-    request.params = data
+    superagent
+      .get(url)
+      .query(data)
+      .end(function(err, res){
+        if (err ) {
+          console.warn(err)
+          return callback('Server Error: ' + err)
+        }
+
+        var data = res.body
+
+        console.log('err:', err)
+        console.log('res:', res)
+        console.log('data:', data)
+
+        if ( !data.ok ) {
+          return callback(data.msg)
+        }
+
+        callback(null, res.body.payload)
+      })
+    return
   }
-  else {
-    // post and put
-    request.data = data
+
+  if ( method === 'post' || method === 'put' ) {
+    superagent
+      [method](url)
+      .type('form') // to send as 'application/x-www-form-urlencoded'
+      .send(data)
+      .end(function(err, res) {
+        if (err ) {
+          console.warn(err)
+          return callback('Server Error: ' + err)
+        }
+
+        var data = res.body
+
+        console.log('err:', err)
+        console.log('res:', res)
+        console.log('data:', data)
+
+        if ( !data.ok ) {
+          return callback(data.msg)
+        }
+
+        callback(null, res.body.payload)
+      })
+    return
   }
 
-  axios(request)
-    .then(function (resp) {
-      console.log('resp:', resp)
-      var data = resp.data
-
-      console.log('data:', data)
-
-      if ( !data.ok ) {
-        return callback(data.msg)
-      }
-
-      console.log('data.payload:', data.payload)
-
-      // all good
-      callback(null, data.payload)
-    })
-    .catch(function (err) {
-      console.warn(err)
-      callback('Server Error: ' + err)
-    })
 }
 
 var app = new Vue({
