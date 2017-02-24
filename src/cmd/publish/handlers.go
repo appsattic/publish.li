@@ -25,6 +25,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -72,7 +73,14 @@ func apiPut(db *bolt.DB) func(w http.ResponseWriter, r *http.Request) {
 			sendError(w, "Provide a title")
 			return
 		}
-
+		if website != "" {
+			u, err := url.ParseRequestURI(website)
+			if err != nil {
+				sendError(w, "Invalid website URL")
+				return
+			}
+			website = u.String()
+		}
 		if twitter != "" {
 			if !isValidTwitterHandle(twitter) {
 				sendError(w, "Invalid Instagram Handle. Only letters, numbers, and underscore allowed.")
@@ -182,6 +190,14 @@ func apiPost(db *bolt.DB) func(w http.ResponseWriter, r *http.Request) {
 		if slug == "" {
 			sendError(w, "Provide a title")
 			return
+		}
+		if website != "" {
+			u, err := url.ParseRequestURI(website)
+			if err != nil {
+				sendError(w, "Invalid website URL")
+				return
+			}
+			website = u.String()
 		}
 		if twitter != "" {
 			if !isValidTwitterHandle(twitter) {
