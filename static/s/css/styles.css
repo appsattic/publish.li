@@ -10,3 +10,7 @@
     padding: 16px 20px;
     margin-bottom: 16px;
 }
+
+pre code {
+    margin-bottom: 1em;
+}
