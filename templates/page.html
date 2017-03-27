@@ -6,10 +6,11 @@
       <header>
         <h1 class="title is-1">[[ .Page.Title ]]</h1>
         <h3 class="subtitle is-3">
-          By
           [[ if .Page.Website ]]
-          <a rel="nofollow" href="[[ .Page.Website ]]">[[ .Page.Author ]]</a>
+          By
+          <a rel="nofollow" href="[[ .Page.Website ]]">[[ or .Page.Author .Page.Website ]]</a>
           [[ else ]]
+          By
           [[ .Page.Author ]]
           [[ end ]]
           [[ with .Page.Twitter ]]<a rel="nofollow" href="https://twitter.com/[[ . ]]"><i class="fa fa-twitter"></i></a>[[ end ]]
